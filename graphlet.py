@@ -162,7 +162,7 @@ def draw_labeled_multigraph(G, attr_name, ax=None):
     for directed graph and maximum total connections for undirected graph.
     """
 
-    pos = nx.shell_layout(G)
+    pos = nx.spring_layout(G)
     nx.draw_networkx_nodes(G, pos, ax=ax)
     nx.draw_networkx_labels(G, pos, font_size=20, ax=ax)
     nx.draw_networkx_edges(G, pos, edge_color="grey", ax=ax)
@@ -342,9 +342,28 @@ def get_three_node_graphlet_dist_adj_list(G: nx.MultiDiGraph):
     # find all combinations of potential 3 node graphlets
     # pick an edge between A and B
     # for each edge pair, find the union of neighbors between A and B
+    e_v = (0, 0, 0) # 0
+    ppi_v = (1, 0, 0) # 1
+    reg1_v = (0, 1, 0) # 2
+    reg2_v = (0, 0, 1) # 4
+    ppi_reg1_v = (1, 1, 0) # 5
+    ppi_reg2_v = (1, 0, 1) # 6
+    both_v = (1, 1, 1) # 7
+    reg_v = (0, 1, 1) # 8
+    vector_identifier_dict ={
+        hash(e_v) : 0,
+        hash(ppi_v) : 2,
+        hash(reg1_v) : 3,
+        hash(reg2_v) : 4,
+        hash(ppi_reg1_v) : 5,
+        hash(ppi_reg2_v) : 6,
+        hash(both_v) : 7,
+        hash(reg_v) : 8,
+    }
     three_node_combination = []
     graphlet_groups = []
     max_reg = 0
+    count = 0
     for (
         i,
         j,
@@ -420,20 +439,40 @@ def get_three_node_graphlet_dist_adj_list(G: nx.MultiDiGraph):
                 # )
                 # max_reg = max(reg_sum, max_reg)
 
-                vector = ab + ac + ba + bc + ca + cb
-                # [0,0,1, 0,0,1, 0,0,1, 0,0,1, 0,0,1 ,0,0,1]
-                vector_group = []
-                for n in range(3):
-                    vector_group += [ab[n] + ac[n] + ba[n] + bc[n] + ca[n] + cb[n]]
-                if vector_group not in graphlet_groups:
-                    graphlet_groups += [vector_group]
-                # print(f"{i} {j} {k} = {vector_group}")
-                # get_three_node_graphlet_hash(ab, ac, ba, bc, ca, cb)
-                if hash(tuple(vector)) not in three_node_graphlet_dict:
-                    three_node_graphlet_dict[hash(tuple(vector))] = 0
-                three_node_graphlet_dict[hash(tuple(vector))] += 1
-    # print(graphlet_groups)
-    # print((i / len(G.nodes())) * 100, end="\r")
+                # vector = ab + ac + ba + bc + ca + cb
+                # vector = [0,0,0]
+                # for v in [ab, ac, ba, bc, ca, cb]:
+                #     vector[0] += v[0]
+                #     vector[1] += v[1]
+                #     vector[2] += v[2]
+                # # print(vector)
+                # # [0,0,1, 0,0,1, 0,0,1, 0,0,1, 0,0,1 ,0,0,1]
+                # if vector not in graphlet_groups:
+                #     graphlet_groups += [vector]
+                # # print(f"{i} {j} {k} = {vector_group}")
+                # get_three_node_graphlet_dict(ab, ac, ba, bc, ca, cb)
+                # if hash(tuple(vector)) not in three_node_graphlet_dict:
+                #     three_node_graphlet_dict[hash(tuple(vector))] = 0
+                # three_node_graphlet_dict[hash(tuple(vector))] += 1
+
+
+                vector_id = []
+                for v in [ab, ac, ba, bc, ca, cb]:
+                    vector_id.append(vector_identifier_dict[hash(tuple(v))])
+                # print(vector_id)
+                vector_id = sorted(vector_id) 
+                # vector_id = vector_id
+
+                if vector_id not in graphlet_groups:
+                    graphlet_groups.append(vector_id)
+        count+=1
+        print((count / len(G.edges())) * 100, end="\r")
+
+    print(f"number of graphlet groups {len(graphlet_groups)}")
+    # print()
+    # for vector in graphlet_groups:
+    #     print(vector)
+    # print()
     print(f"max reg {max_reg}")
 
     return three_node_graphlet_dict
@@ -449,7 +488,7 @@ def get_three_node_graphlet_dict(ab, ac, ba, bc, ca, cb):
     both_v = [1, 1, 1]
     reg_v = [0, 1, 1]
 
-    # lines
+
 
     return None
 
@@ -610,6 +649,7 @@ def main(stdscr):
         print("\nthree node graphlet counts")
         for key in three_node_graphlet_dict:
             print(f"{key} = {three_node_graphlet_dict[key]}")
+        print(f"number of 3 node graphlets = {len(three_node_graphlet_dict.keys())}")
 
     # draw_labeled_multigraph(G, "label")
     # plt.show()
