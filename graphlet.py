@@ -498,18 +498,21 @@ def get_three_node_graphlet_dist_adj_list_v2(G: nx.MultiDiGraph, G_prime: nx.Gra
     # find all combinations of potential 3 node graphlets
     # pick an edge between A and B
     # for each edge pair, find the union of neighbors between A and B
-    three_node_combination = []
     count = 0
     three_node_combination = set()
+    completed_i = set()
+    for i in sorted(G_prime.nodes(), key=lambda x: G_prime.degree(x)):
 
-    for i in G_prime.nodes():
-        i_neighbors = {j for _, j in G_prime.edges(i)}  # Use set for neighbors
+        i_neighbors = {j for _, j in G_prime.edges(i) if j not in completed_i}  # Use set for neighbors
+        print(f"{i} : {len(i_neighbors)} - {G_prime.degree(i)}", end= "\r")
 
         # Add combinations of two neighbors with the center node
         for j, k in combinations(i_neighbors, 2):
             # Ensure the triplet is unique by sorting or using frozenset
             triplet = frozenset([i, j, k])
+            # if j not in completed_i and k not in completed_i:
             if triplet not in three_node_combination:
+                # print(i,j,k)
                 three_node_combination.add(triplet)
                 a, b, c = i, j, k
 
@@ -561,10 +564,12 @@ def get_three_node_graphlet_dist_adj_list_v2(G: nx.MultiDiGraph, G_prime: nx.Gra
 
         # Add other graphlets by considering neighbors of neighbors
         for j in i_neighbors:
-            j_neighbors = {k for _, k in G_prime.edges(j) if k != i}  # Avoid the center node `i`
+            j_neighbors = {k for _, k in G_prime.edges(j) if k != i and k not in completed_i}  # Avoid the center node `i`
             for k in j_neighbors:
                 triplet = frozenset([i, j, k])
+                # if j not in completed_i and k not in completed_i:
                 if triplet not in three_node_combination:
+                    # print(i,j,k)
                     three_node_combination.add(triplet)
 
                     a, b, c = i, j, k
@@ -615,7 +620,7 @@ def get_three_node_graphlet_dist_adj_list_v2(G: nx.MultiDiGraph, G_prime: nx.Gra
                         graphlet_mapper[hash(sorted_tuples)] = sorted_tuples
                     three_node_graphlet_dict[hash(sorted_tuples)]+=1
 
-        print((count / len(G.nodes())) * 100, end="\r")
+        completed_i.add(i)
         count+=1
     run_time =  time.time() - start_time
     print("run time : %.3f seconds" % run_time)
